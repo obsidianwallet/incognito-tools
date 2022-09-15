@@ -2,14 +2,16 @@ package decoder
 
 import (
 	"github.com/incognitochain/go-incognito-sdk-v2/wallet"
+	"github.com/obsidianwallet/incognito-tools/shared"
 )
 
 func DecodeWalletKey(key string) (interface{}, error) {
-	var result interface{}
-	wl, err := wallet.Base58CheckDeserialize(v)
+	var result shared.DecodedWallet
+	wl, err := wallet.Base58CheckDeserialize(key)
 	if err != nil {
 		panic(err)
 	}
+
 	return result, nil
 }
 

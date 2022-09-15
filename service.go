@@ -1,5 +1,9 @@
 package main
 
+import (
+	"github.com/obsidianwallet/incognito-tools/apis"
+)
+
 func main() {
-	decoder.DecodeWalletKey()
+	apis.StartService()
 }
