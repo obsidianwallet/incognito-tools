@@ -1,22 +1,47 @@
 package decoder
 
 import (
+	"github.com/incognitochain/go-incognito-sdk-v2/common"
+	"github.com/incognitochain/go-incognito-sdk-v2/common/base58"
 	"github.com/incognitochain/go-incognito-sdk-v2/wallet"
 	"github.com/obsidianwallet/incognito-tools/shared"
 )
 
-func DecodeWalletKey(key string) (interface{}, error) {
-	var result shared.DecodedWallet
+func DecodeWalletKey(key string, shardNum int) (*shared.DecodedWallet, error) {
 	wl, err := wallet.Base58CheckDeserialize(key)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return result, nil
-}
+	otakey := wl.Base58CheckSerialize(wallet.OTAKeyType)
 
-// github.com/gin-contrib/gzip v0.0.5
-// github.com/gin-gonic/gin v1.8.1
-// github.com/go-resty/resty/v2 v2.7.0
-// github.com/incognitochain/go-incognito-sdk-v2 v1.0.1-beta.0.20220803110223-48128c589460
-// github.com/patrickmn/go-cache v2.1.0+incompatible
+	readonlykey := wl.Base58CheckSerialize(wallet.ReadonlyKeyType)
+
+	paymentkey := wl.Base58CheckSerialize(wallet.PaymentAddressType)
+
+	validatorkey := ""
+	if len(wl.KeySet.PrivateKey) > 0 {
+		validatorkey = base58.Base58Check{}.Encode(common.HashB(common.HashB(wl.KeySet.PrivateKey)), common.ZeroByte)
+	}
+
+	shardid := -1
+	var pubkey string
+	if len(wl.KeySet.PaymentAddress.Pk) > 0 {
+		pubkey, err = wl.GetPublicKey()
+		if err != nil {
+			return nil, err
+		}
+		shardid = int(GetShardIDFromLastByte(wl.KeySet.PaymentAddress.Pk[len(wl.KeySet.PaymentAddress.Pk)-1], shardNum))
+	}
+
+	result := shared.DecodedWallet{
+		PubkeyBase58:   pubkey,
+		PaymentAddress: paymentkey,
+		OTAKeyBase58:   otakey,
+		ReadOnlyKey:    readonlykey,
+		ValidatorKey:   validatorkey,
+		ShardID:        shardid,
+	}
+
+	return &result, nil
+}
